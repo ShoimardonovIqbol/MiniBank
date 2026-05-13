@@ -6,13 +6,25 @@ from .models import (
 )
 from datetime import datetime
 
-# 1. User Short Serializer (барои nested output)
+# 1. Сериализатор для краткой информации о пользователе
 class UserShortSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'first_name', 'last_name', 'email']
 
-# 2. Customer Profile Serializer
+# 2. Сериализатор для Регистрации
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = User
+        fields = ['username', 'first_name', 'last_name', 'email', 'password']
+
+    def create(self, validated_data):
+        user = User.objects.create_user(**validated_data)
+        return user
+
+# 3. Сериализатор профиля клиента
 class CustomerProfileSerializer(serializers.ModelSerializer):
     user_details = UserShortSerializer(source='user', read_only=True)
 
@@ -20,7 +32,7 @@ class CustomerProfileSerializer(serializers.ModelSerializer):
         model = CustomerProfile
         fields = '__all__'
 
-# 3. Wallet Serializer
+# 4. Сериализатор кошелька
 class WalletSerializer(serializers.ModelSerializer):
     user_details = UserShortSerializer(source='user', read_only=True)
 
@@ -34,7 +46,7 @@ class WalletSerializer(serializers.ModelSerializer):
         representation['balance'] = f"{instance.balance} {instance.currency}"
         return representation
 
-# 4. Bank Card Serializer
+# 5. Сериализатор банковской карты
 class BankCardSerializer(serializers.ModelSerializer):
     class Meta:
         model = BankCard
@@ -42,21 +54,21 @@ class BankCardSerializer(serializers.ModelSerializer):
 
     def validate_expire_month(self, value):
         if not (1 <= value <= 12):
-            raise serializers.ValidationError("Моҳ бояд аз 1 то 12 бошад.")
+            raise serializers.ValidationError("Месяц должен быть от 1 до 12.")
         return value
 
     def validate_expire_year(self, value):
         if value < datetime.now().year:
-            raise serializers.ValidationError("Соли эътибор набояд гузашта бошад.")
+            raise serializers.ValidationError("Год действия не может быть в прошлом.")
         return value
 
-# 5. Payment Category Serializer
+# 6. Сериализатор категории платежа
 class PaymentCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentCategory
         fields = '__all__'
 
-# 6. Service Provider Serializer
+# 7. Сериализатор провайдера услуг
 class ServiceProviderSerializer(serializers.ModelSerializer):
     category_details = PaymentCategorySerializer(source='category', read_only=True)
 
@@ -64,7 +76,7 @@ class ServiceProviderSerializer(serializers.ModelSerializer):
         model = ServiceProvider
         fields = '__all__'
 
-# 7. Transaction Serializer
+# 8. Сериализатор транзакций
 class TransactionSerializer(serializers.ModelSerializer):
     sender_wallet_num = serializers.ReadOnlyField(source='sender_wallet.wallet_number')
     receiver_wallet_num = serializers.ReadOnlyField(source='receiver_wallet.wallet_number')
@@ -78,7 +90,7 @@ class TransactionSerializer(serializers.ModelSerializer):
         representation['amount'] = f"{instance.amount} {instance.currency}"
         return representation
 
-# 8. Payment Serializer
+# 9. Сериализатор платежа
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
@@ -87,29 +99,23 @@ class PaymentSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         wallet = attrs.get('wallet')
         amount = attrs.get('amount')
-        if wallet.balance < amount:
-            raise serializers.ValidationError("Дар ҳамён маблағи кофӣ нест.")
+        if wallet and amount and wallet.balance < amount:
+            raise serializers.ValidationError("На кошельке недостаточно средств.")
         return attrs
 
-# 9. Favorite Payment Serializer
+# 10. Сериализатор избранных платежей
 class FavoritePaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoritePayment
         fields = '__all__'
 
-# 10. Notification Serializer
+# 11. Сериализатор уведомлений
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = '__all__'
 
-# --- Serializers барои Special Actions (POST-only) ---
-
-class TopUpSerializer(serializers.Serializer):
-    wallet_id = serializers.IntegerField()
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
-    description = serializers.CharField(required=False, allow_blank=True)
-
+# 12. Вспомогательный сериализатор для перевода (Transfer)
 class TransferSerializer(serializers.Serializer):
     sender_wallet_id = serializers.IntegerField()
     receiver_wallet_number = serializers.CharField()

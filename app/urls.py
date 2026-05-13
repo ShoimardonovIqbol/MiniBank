@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import *  # Ин ҷо '*' ҳама чизро аз views мегирад, то хатои ImportError нашавад
+from .views import *
 
 router = DefaultRouter()
 router.register(r'profiles', CustomerProfileViewSet)
@@ -12,6 +12,9 @@ router.register(r'notifications', NotificationViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('register/', RegisterView.as_view(), name='register'),
+    path('login/', LoginView.as_view(), name='login'),
+    path('logout/', LogoutView.as_view(), name='logout'),
     path('payment-categories/', payment_category_list, name='payment-category-list'),
     path('transactions/', TransactionListAPIView.as_view(), name='transaction-list'),
     path('transactions/transfer/', TransferAPIView.as_view(), name='transaction-transfer'),

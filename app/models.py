@@ -2,7 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
 
-# 1. Профили клиент
 class CustomerProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     phone_number = models.CharField(max_length=20)
@@ -15,7 +14,6 @@ class CustomerProfile(models.Model):
     def __str__(self):
         return f"{self.user.username} | {self.phone_number}"
 
-# 2. Ҳамён (Wallet)
 class Wallet(models.Model):
     CURRENCY_CHOICES = [('TJS', 'TJS'), ('USD', 'USD'), ('RUB', 'RUB')]
     STATUS_CHOICES = [('ACTIVE', 'Active'), ('BLOCKED', 'Blocked'), ('CLOSED', 'Closed')]
@@ -31,7 +29,6 @@ class Wallet(models.Model):
     def __str__(self):
         return f"Wallet: {self.wallet_number} ({self.user.username})"
 
-# 3. Корти бонкӣ
 class BankCard(models.Model):
     CARD_TYPES = [('VISA', 'Visa'), ('MASTERCARD', 'Mastercard'), ('KORTI_MILLI', 'Korti Milli'), ('OTHER', 'Other')]
     STATUS_CHOICES = [('ACTIVE', 'Active'), ('BLOCKED', 'Blocked'), ('EXPIRED', 'Expired')]
@@ -48,7 +45,6 @@ class BankCard(models.Model):
     def __str__(self):
         return f"{self.card_type} | {self.masked_pan} ({self.user.username})"
 
-# 4. Категорияи пардохт
 class PaymentCategory(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
@@ -58,7 +54,6 @@ class PaymentCategory(models.Model):
     def __str__(self):
         return self.name
 
-# 5. Провайдер
 class ServiceProvider(models.Model):
     category = models.ForeignKey(PaymentCategory, on_delete=models.CASCADE, related_name='providers')
     name = models.CharField(max_length=100)
@@ -72,11 +67,9 @@ class ServiceProvider(models.Model):
     def __str__(self):
         return f"{self.name} ({self.category.name})"
 
-# 6. Транзаксия
 class Transaction(models.Model):
     TYPE_CHOICES = [('TOP_UP', 'Top Up'), ('TRANSFER', 'Transfer'), ('PAYMENT', 'Payment'), ('WITHDRAW', 'Withdraw')]
     STATUS_CHOICES = [('PENDING', 'Pending'), ('SUCCESS', 'Success'), ('FAILED', 'Failed'), ('CANCELLED', 'Cancelled')]
-
     sender_wallet = models.ForeignKey(Wallet, on_delete=models.SET_NULL, null=True, related_name='sent_transactions')
     receiver_wallet = models.ForeignKey(Wallet, on_delete=models.SET_NULL, null=True, related_name='received_transactions')
     transaction_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
@@ -92,7 +85,6 @@ class Transaction(models.Model):
     def __str__(self):
         return f"TX {self.id}: {self.transaction_type} - {self.amount} {self.currency}"
 
-# 7. Пардохт (Payment)
 class Payment(models.Model):
     STATUS_CHOICES = [('PENDING', 'Pending'), ('SUCCESS', 'Success'), ('FAILED', 'Failed'), ('CANCELLED', 'Cancelled')]
 
@@ -110,7 +102,6 @@ class Payment(models.Model):
     def __str__(self):
         return f"Payment to {self.provider.name} | {self.amount} TJS"
 
-# 8. Пардохти дӯстдошта
 class FavoritePayment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
     provider = models.ForeignKey(ServiceProvider, on_delete=models.CASCADE)
@@ -121,7 +112,6 @@ class FavoritePayment(models.Model):
     def __str__(self):
         return f"{self.title} ({self.user.username})"
 
-# 9. Огоҳинома (Notification)
 class Notification(models.Model):
     TYPE_CHOICES = [('TRANSACTION', 'Transaction'), ('PAYMENT', 'Payment'), ('SYSTEM', 'System'), ('CARD', 'Card')]
 
